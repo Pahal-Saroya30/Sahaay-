@@ -1,0 +1,909 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sahaay | Real-Time Traffic Forecasting & Analytics</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Leaflet.js CDN CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+    <!-- Vanilla CSS stylesheet -->
+    <link rel="stylesheet" href="/static/styles.css?v=2.1">
+    <!-- Browser tab logo icon -->
+    <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
+    <!-- Leaflet.js CDN Script -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    <!-- Lucide Icons CDN -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body>
+    <div class="bg-glow"></div>
+    <div class="app-container split-pane-layout">
+        
+        <!-- ========================================== -->
+        <!-- LEFT PANEL: PERMANENT CONTROL HUD          -->
+        <!-- ========================================== -->
+        <aside class="control-hud">
+            
+            <!-- HUD Header Details -->
+            <header class="hud-header">
+                <div class="logo-area">
+                    <img id="logo-img" src="/static/favicon.svg" alt="Sahaay Logo" class="logo-graphic">
+                    <span class="logo-text">Sahaay</span>
+                </div>
+                <div class="header-right-group">
+                    <!-- Live Telemetry Status Wave -->
+                    <svg class="hud-status-wave" viewBox="0 0 60 14" title="SYS status telemetry stream">
+                        <rect x="0" y="0" width="3" height="14"></rect>
+                        <rect x="6" y="0" width="3" height="14"></rect>
+                        <rect x="12" y="0" width="3" height="14"></rect>
+                        <rect x="18" y="0" width="3" height="14"></rect>
+                        <rect x="24" y="0" width="3" height="14"></rect>
+                        <rect x="30" y="0" width="3" height="14"></rect>
+                    </svg>
+                    <div class="system-time">
+                        <i data-lucide="clock" class="time-icon"></i>
+                        <span id="live-time">Bengaluru, IN</span>
+                    </div>
+                </div>
+            </header>
+
+
+            <!-- Tab Navigation Menu -->
+            <nav class="nav-tabs-hud">
+                <button class="hud-tab-btn active" data-tab="predict">
+                    <i data-lucide="compass"></i> Predict
+                </button>
+                <button class="hud-tab-btn" data-tab="hotspots">
+                    <i data-lucide="activity"></i> Hotspots
+                </button>
+                <button class="hud-tab-btn" data-tab="learning">
+                    <i data-lucide="cpu"></i> Learning
+                </button>
+                <button class="hud-tab-btn" data-tab="about">
+                    <i data-lucide="terminal"></i> Docs
+                </button>
+            </nav>
+
+            <hr class="hud-divider">
+
+            <!-- Prediction Form Widgets -->
+            <!-- Prediction Form Widgets -->
+            <div class="hud-group collapsible-section open" id="hud-inputs-section">
+                <h3 class="hud-section-header section-header-trigger" id="inputs-header-trigger" style="cursor:pointer;">
+                    <span>01 :: Describe Event</span>
+                    <div style="display:flex; align-items:center; gap:8px;">
+                        <span class="header-tag" id="corridor-coords">[COORD: STANDBY]</span>
+                        <i data-lucide="chevron-down" class="section-chevron-icon" id="inputs-chevron"></i>
+                    </div>
+                </h3>
+                <div class="section-collapse-content" id="inputs-section-collapse">
+                    <form id="predict-form" class="hud-form">
+                        <div class="form-group">
+                            <label>Incident Classification</label>
+                            <div class="segmented-control">
+                                <button type="button" class="segment-btn active" data-value="unplanned">:: UNPLANNED INCIDENT</button>
+                                <button type="button" class="segment-btn" data-value="planned">:: PLANNED CAMPAIGN</button>
+                            </div>
+                            <input type="hidden" id="event_type" value="unplanned">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Event Cause</label>
+                            <div class="cause-selector-dropdown" id="cause-selector-dropdown">
+                                <button type="button" class="cause-trigger-btn" id="cause-trigger">
+                                    <span class="active-cause-info" id="active-cause-info">
+                                        <i data-lucide="alert-triangle"></i>
+                                        <span id="active-cause-label">Accident</span>
+                                    </span>
+                                    <i data-lucide="chevron-down" class="chevron-icon"></i>
+                                </button>
+                                <div class="cause-grid-collapse" id="cause-grid-collapse">
+                                    <div class="cause-grid" id="cause-visual-grid">
+                                        <!-- Populated dynamically by JS -->
+                                    </div>
+                                </div>
+                            </div>
+                            <input type="hidden" id="event_cause" value="accident" required>
+                        </div>
+                        
+                        <!-- Unified Location Control Deck -->
+                        <div class="location-control-deck">
+                            <div class="deck-header">
+                                <label><i data-lucide="map-pin"></i> Location Control Deck</label>
+                                <button type="button" class="vp-toggle-btn" id="vp-toggle-btn">
+                                    <span id="vp-toggle-text">Show Grid</span>
+                                    <i data-lucide="eye" id="vp-toggle-icon"></i>
+                                </button>
+                            </div>
+                            
+                            <div class="form-group" style="margin-bottom: 0;">
+                                <select id="corridor" required>
+                                    <!-- Populated dynamically -->
+                                </select>
+                            </div>
+                            
+                            <!-- Tactical Coord Grid (VectorPad) -->
+                            <div class="vector-pad-outer-collapse" id="vector-pad-outer-collapse">
+                                <div class="vector-pad-outer" style="margin-top: 8px;">
+                                    <!-- HEADER -->
+                                    <div class="vector-pad-header">
+                                        <div class="vector-pad-status-group">
+                                            <div class="vector-pad-led" id="vp-led"></div>
+                                            <span>VECTOR_CONTROLLER</span>
+                                        </div>
+                                        <span class="vector-pad-state-label" id="vp-state">IDLE</span>
+                                    </div>
+
+                                    <!-- MAIN PAD AREA -->
+                                    <div class="vector-pad-area-container">
+                                        <!-- Corner Brackets -->
+                                        <div class="vp-bracket vp-bracket-tl"></div>
+                                        <div class="vp-bracket vp-bracket-tr"></div>
+                                        <div class="vp-bracket vp-bracket-bl"></div>
+                                        <div class="vp-bracket vp-bracket-br"></div>
+
+                                        <div class="vector-pad-canvas" id="vector-pad-canvas">
+                                            <!-- Grid Pattern -->
+                                            <div class="vector-pad-grid-pattern"></div>
+
+                                            <!-- Dynamic Radar Sweep -->
+                                            <div class="vector-pad-radar-sweep"></div>
+
+                                            <!-- CROSSHAIRS -->
+                                            <div class="vector-pad-crosshair-x" id="vp-crosshair-x"></div>
+                                            <div class="vector-pad-crosshair-y" id="vp-crosshair-y"></div>
+
+                                            <!-- THE RETICLE / PUCK -->
+                                            <div class="vector-pad-reticle" id="vp-reticle">
+                                                <div class="vp-reticle-inner">
+                                                    <!-- Center Dot -->
+                                                    <div class="vp-center-dot"></div>
+                                                    
+                                                    <!-- Outer Box -->
+                                                    <div class="vp-outer-box">
+                                                        <!-- Corner accents -->
+                                                        <div class="vp-box-accent vp-box-accent-tl"></div>
+                                                        <div class="vp-box-accent vp-box-accent-tr"></div>
+                                                        <div class="vp-box-accent vp-box-accent-bl"></div>
+                                                        <div class="vp-box-accent vp-box-accent-br"></div>
+                                                    </div>
+
+                                                    <!-- Ping Wave -->
+                                                    <div class="vp-ping-wave" id="vp-ping-wave"></div>
+                                                </div>
+                                            </div>
+
+                                            <!-- Coordinates Overlay -->
+                                            <div class="vector-pad-seeking-text" id="vp-seeking-text">SEEKING...</div>
+                                        </div>
+                                    </div>
+
+                                    <!-- DATA READOUT PANELS -->
+                                    <div class="vector-pad-data-panels">
+                                        <div class="vp-data-panel" id="vp-panel-x">
+                                            <div class="vp-data-bg"></div>
+                                            <div class="vp-data-content">
+                                                <span class="vp-data-lbl">COORD_X</span>
+                                                <div class="vp-data-val-wrapper">
+                                                    <span class="vp-data-val" id="vp-val-x">050</span>
+                                                    <span class="vp-data-unit">%</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="vp-data-panel" id="vp-panel-y">
+                                            <div class="vp-data-bg"></div>
+                                            <div class="vp-data-content">
+                                                <span class="vp-data-lbl">COORD_Y</span>
+                                                <div class="vp-data-val-wrapper">
+                                                    <span class="vp-data-val" id="vp-val-y">050</span>
+                                                    <span class="vp-data-unit">%</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="form-group check-group">
+                            <label class="checkbox-container">
+                                <input type="checkbox" id="requires_road_closure">
+                                <span class="checkmark"></span>
+                                Road closure already planned or required?
+                            </label>
+                        </div>
+                        
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="event_date">Date</label>
+                                <input type="date" id="event_date" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="event_time">Time</label>
+                                <input type="time" id="event_time" required>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Dynamic Forecast Results & Slider Simulator -->
+            <div id="initial-prompt" class="hud-prompt-card">
+                <i data-lucide="shield-alert" class="prompt-icon"></i>
+                <h3>No Input Telemetry</h3>
+                <p>Modify form inputs or click corridors on the GIS Map to instantly run real-time predictions.</p>
+            </div>
+
+            <div id="prediction-results" class="hud-results-container hidden">
+                <hr class="hud-divider">
+                <h3 class="hud-section-header">02 :: Forecast Telemetry</h3>
+                
+                <div class="metrics-grid">
+                    <div class="metric-card" id="result-severity-card">
+                        <div class="metric-title">:: Severity Index</div>
+                        <div class="severity-ring-container">
+                            <svg class="severity-svg" viewBox="0 0 36 36">
+                                <path class="ring-bg" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"></path>
+                                <path class="ring-fill" id="severity-ring-path" stroke-dasharray="0, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"></path>
+                            </svg>
+                            <div class="severity-ring-value" id="res-severity-score">0.0</div>
+                        </div>
+                        <div class="severity-band-label" id="res-severity-band">Low</div>
+                    </div>
+                    
+                    <div class="metric-card-list">
+                        <div class="mini-metric-card">
+                            <span class="title">:: Predicted Duration</span>
+                            <span class="value" id="res-duration">0 min</span>
+                            <div class="tactical-meter-bar" style="margin-top: 5px;">
+                                <div class="tactical-meter-fill" id="meter-fill-duration" style="width: 0%;"></div>
+                            </div>
+                        </div>
+                        <div class="mini-metric-card">
+                            <span class="title">:: Closure Likelihood</span>
+                            <span class="value" id="res-closure">0%</span>
+                            <div class="tactical-meter-bar" style="margin-top: 5px;">
+                                <div class="tactical-meter-fill" id="meter-fill-closure" style="width: 0%;"></div>
+                            </div>
+                        </div>
+                        <div class="mini-metric-card">
+                            <span class="title">:: Past Precedents</span>
+                            <span class="value" id="res-similar">0</span>
+                            <div class="tactical-meter-bar" style="margin-top: 5px;">
+                                <div class="tactical-meter-fill" id="meter-fill-similar" style="width: 0%;"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Personnel Simulator Slider (Interactive clearance curve) -->
+                <div class="simulator-card glass-card">
+                    <div class="sim-header">
+                        <span class="sim-title">:: Deployment Simulator</span>
+                        <span class="sim-value" id="sim-personnel-val">5 Officers</span>
+                    </div>
+                    <input type="range" id="sim-personnel-slider" min="1" max="20" value="5" class="hud-slider">
+                    <div class="sim-output">
+                        <i data-lucide="info" class="sim-info-icon"></i>
+                        <span id="sim-duration-impact">Deploying 5 officers maintains expected clearance curves.</span>
+                    </div>
+                </div>
+
+                <!-- Recommendations Panel -->
+                <div class="reco-grid">
+                    <div class="reco-block info">
+                        <h4><i data-lucide="users"></i> Manpower Recommendation</h4>
+                        <p id="reco-manpower">Routine monitoring.</p>
+                    </div>
+                    <div class="reco-block" id="reco-barricade-block">
+                        <h4><i data-lucide="construction"></i> Barricading Decision</h4>
+                        <p id="reco-barricade">Likely not required.</p>
+                    </div>
+                    <div class="reco-block diversion">
+                        <h4><i data-lucide="git-fork"></i> Diversion Suggestions</h4>
+                        <ul id="reco-diversions">
+                            <!-- Populated dynamically -->
+                        </ul>
+                    </div>
+                </div>
+                
+                <p class="context-caption" id="context-caption">No historical precedents found.</p>
+            </div>
+
+            <!-- Sleek single-line Telemetry Ticker -->
+            <footer class="hud-footer">
+                <div class="footer-left">
+                    <span class="ticker-prefix">TEL_FEEDBACK //</span>
+                    <span class="ticker-content" id="telemetry-ticker">SYSTEM INITIALIZED // WAITING FOR TELEMETRY</span>
+                </div>
+                <div class="footer-right-telemetry">
+                    <span class="foot-tel-item">SYS: <span class="val pulsing-green">ONLINE</span></span>
+                    <span class="foot-tel-divider">//</span>
+                    <span class="foot-tel-item">ENG: <span class="val">2 ACTIVE</span></span>
+                    <span class="foot-tel-divider">//</span>
+                    <span class="foot-tel-item">BUF: <span class="val text-low" id="telemetry-feedback-count">0</span></span>
+                </div>
+            </footer>
+        </aside>
+
+        <!-- ========================================== -->
+        <!-- RIGHT PANEL: SLIDING TELEMETRY CANVAS      -->
+        <!-- ========================================== -->
+        <main class="telemetry-canvas">
+            <div class="tabs-slider" id="tabs-slider">
+                
+                <!-- Predict Tab: GIS Leaflet Map -->
+                <section class="tab-panel active" id="panel-predict">
+                    <div class="map-viewport-container">
+                        <div id="leaflet-map" class="map-viewport"></div>
+                        <div class="map-overlay-radar"></div>
+                        <div class="map-overlay-grid"></div>
+                    </div>
+                </section>
+                
+                <!-- Hotspots Tab: Analytical Hotspots Charts -->
+                <section class="tab-panel" id="panel-hotspots">
+                    <div class="panel-scroll-container">
+                        
+                        <!-- Futuristic Hotspots Telemetry Ribbon -->
+                        <div class="hotspots-summary-ribbon">
+                            <div class="summary-metric-card">
+                                <div class="metric-accent-line"></div>
+                                <div class="metric-body">
+                                    <span class="metric-label">CRITICALITY_INDEX</span>
+                                    <div class="metric-value-group">
+                                        <span class="metric-num">84.2</span>
+                                        <span class="metric-unit">% PEAK</span>
+                                    </div>
+                                    <div class="metric-mini-bar"><div class="metric-mini-fill" style="width: 84.2%;"></div></div>
+                                </div>
+                            </div>
+                            <div class="summary-metric-card">
+                                <div class="metric-accent-line"></div>
+                                <div class="metric-body">
+                                    <span class="metric-label">PRECEDENTS_ANALYZED</span>
+                                    <div class="metric-value-group">
+                                        <span class="metric-num">8,173</span>
+                                        <span class="metric-unit">EVENTS</span>
+                                    </div>
+                                    <span class="metric-subtext">HISTORICAL TELEMETRY POOL</span>
+                                </div>
+                            </div>
+                            <div class="summary-metric-card">
+                                <div class="metric-accent-line"></div>
+                                <div class="metric-body">
+                                    <span class="metric-label">MAX_CONGESTED_NODE</span>
+                                    <div class="metric-value-group">
+                                        <span class="metric-title-val">OUTER RING ROAD</span>
+                                    </div>
+                                    <span class="metric-subtext">244 PRECEDENTS REGISTERED</span>
+                                </div>
+                            </div>
+                            <div class="summary-metric-card">
+                                <div class="metric-accent-line"></div>
+                                <div class="metric-body">
+                                    <span class="metric-label">PRIMARY_CAUSE_LEADER</span>
+                                    <div class="metric-value-group">
+                                        <span class="metric-title-val">ACCIDENT</span>
+                                    </div>
+                                    <span class="metric-subtext">1,244 INCIDENTS LOGGED</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="glass-card full-card hud-chart-card">
+                            <!-- Technical Corner Brackets -->
+                            <div class="card-bracket bracket-tl"></div>
+                            <div class="card-bracket bracket-tr"></div>
+                            <div class="card-bracket bracket-bl"></div>
+                            <div class="card-bracket bracket-br"></div>
+                            <div class="card-micro-grid"></div>
+
+                            <h2 class="card-header">
+                                <span><span class="prefix">01 ::</span> Corridor Criticality Timeline & Event Volume</span>
+                                <span class="header-tag">[TELEMETRY: ACTIVE]</span>
+                            </h2>
+                            <p class="section-desc" style="margin-bottom:20px; position: relative; z-index: 1;">Corridors ranked by historical incident counts. Pill colors represent average congestion criticality (Antique Brass = Low duration, Coffee = Medium duration, Terra Cotta = Critical duration).</p>
+                            <div class="timeline-chart-container" id="custom-timeline-chart" style="position: relative; z-index: 1;">
+                                <!-- Filled dynamically -->
+                            </div>
+                        </div>
+                        
+                        <div class="grid-2">
+                            <div class="glass-card hud-chart-card">
+                                <!-- Technical Corner Brackets -->
+                                <div class="card-bracket bracket-tl"></div>
+                                <div class="card-bracket bracket-tr"></div>
+                                <div class="card-bracket bracket-bl"></div>
+                                <div class="card-bracket bracket-br"></div>
+                                <div class="card-micro-grid"></div>
+
+                                <h3 class="card-header">
+                                    <span><span class="prefix">02 ::</span> Top Cause + Corridor Pairs</span>
+                                    <span class="header-tag">[TOP 12 COMBINATIONS]</span>
+                                </h3>
+                                <div class="combinations-chart-container" id="custom-combinations-chart" style="position: relative; z-index: 1;">
+                                    <!-- Filled dynamically -->
+                                </div>
+                            </div>
+                            <div class="glass-card hud-chart-card">
+                                <!-- Technical Corner Brackets -->
+                                <div class="card-bracket bracket-tl"></div>
+                                <div class="card-bracket bracket-tr"></div>
+                                <div class="card-bracket bracket-bl"></div>
+                                <div class="card-bracket bracket-br"></div>
+                                <div class="card-micro-grid"></div>
+
+                                <h3 class="card-header">
+                                    <span><span class="prefix">03 ::</span> Road-Closure Rates by Location</span>
+                                    <span class="header-tag">[VERTICAL TELEMETRY]</span>
+                                </h3>
+                                <p class="section-desc" style="margin-bottom:20px; position: relative; z-index: 1;">Percentage of past events requiring road closures (horizontal scrollable grid).</p>
+                                <div class="closures-chart-container" id="custom-closures-chart" style="position: relative; z-index: 1;">
+                                    <!-- Filled dynamically -->
+                                </div>
+                                <div class="closures-legend" style="position: relative; z-index: 1;">
+                                    <div class="legend-items">
+                                        <div class="legend-item"><span class="legend-color" style="background:var(--color-low);"></span> Low Closure Rate (&lt;5%)</div>
+                                        <div class="legend-item"><span class="legend-color" style="background:var(--color-medium);"></span> Med Closure Rate (5%-12%)</div>
+                                        <div class="legend-item"><span class="legend-color" style="background:var(--color-high);"></span> High Closure Rate (&gt;12%)</div>
+                                    </div>
+                                    <div>Pillar: Closure Rate | Dot: Event Frequency</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+                
+                <!-- Learning Tab: Closed-Loop retrain & outcome log -->
+                <section class="tab-panel" id="panel-learning">
+                    <div class="panel-scroll-container">
+                        <h2 class="section-title"><span class="prefix">SYS ::</span> Closed-Loop Event Learning System</h2>
+                        <p class="section-desc">Traditional traffic systems do not learn from their predictions. Here, when an event resolves, officers log outcomes. These feed back directly into the training database to retrain prediction models on-the-fly.</p>
+                        
+                        <!-- High-Tech Model Synapse & Closed-Loop Network Map -->
+                        <div class="glass-card full-card synapse-visual-card" style="margin-bottom: 25px;">
+                            <div class="card-bracket bracket-tl"></div>
+                            <div class="card-bracket bracket-tr"></div>
+                            <div class="card-micro-grid"></div>
+                            <div class="synapse-visual-header">
+                                <span>:: MODEL SYNAPSE closed-loop flow telemetry</span>
+                                <span class="header-tag" id="synapse-flow-status">FLOW: STANDBY</span>
+                            </div>
+                            <svg class="learning-synapse-map" id="learning-synapse-map" viewBox="0 0 800 120">
+                                <path class="synapse-flow-line" id="flow-line-1" d="M 160,60 L 260,60"></path>
+                                <path class="synapse-flow-line" id="flow-line-2" d="M 340,60 L 460,60"></path>
+                                <path class="synapse-flow-line" id="flow-line-3" d="M 540,60 L 640,60"></path>
+                                
+                                <g class="synapse-node" id="node-log" transform="translate(100, 60)">
+                                    <circle r="30" class="node-bg"></circle>
+                                    <circle r="35" class="node-ring-inner"></circle>
+                                    <circle r="40" class="node-ring-outer"></circle>
+                                    <text class="node-icon" y="1">LOG</text>
+                                </g>
+                                <g class="synapse-node" id="node-buffer" transform="translate(300, 60)">
+                                    <circle r="30" class="node-bg"></circle>
+                                    <circle r="35" class="node-ring-inner"></circle>
+                                    <circle r="40" class="node-ring-outer"></circle>
+                                    <text class="node-icon" y="1">BUFFER</text>
+                                </g>
+                                <g class="synapse-node" id="node-retrain" transform="translate(500, 60)">
+                                    <circle r="30" class="node-bg"></circle>
+                                    <circle r="35" class="node-ring-inner"></circle>
+                                    <circle r="40" class="node-ring-outer"></circle>
+                                    <text class="node-icon" y="1">RETRAIN</text>
+                                </g>
+                                <g class="synapse-node" id="node-models" transform="translate(700, 60)">
+                                    <circle r="30" class="node-bg"></circle>
+                                    <circle r="35" class="node-ring-inner"></circle>
+                                    <circle r="40" class="node-ring-outer"></circle>
+                                    <text class="node-icon" y="1">MODELS</text>
+                                </g>
+                            </svg>
+                        </div>
+
+                        <!-- Feedback Pool Summary (3D Metric Cards) -->
+                        <div class="learning-summary-ribbon">
+                            <div class="summary-metric-card">
+                                <div class="metric-accent-line"></div>
+                                <div class="metric-body">
+                                    <span class="metric-label">LOGGED_OUTCOMES</span>
+                                    <div class="metric-value-group">
+                                        <span class="metric-num" id="stats-logged-count">0</span>
+                                    </div>
+                                    <span class="metric-subtext">TOTAL FIELD REVIEWS COLLECTED</span>
+                                </div>
+                            </div>
+                            <div class="summary-metric-card">
+                                <div class="metric-accent-line"></div>
+                                <div class="metric-body">
+                                    <span class="metric-label">AVG_ACTUAL_DURATION</span>
+                                    <div class="metric-value-group">
+                                        <span class="metric-num" id="stats-avg-duration">N/A</span>
+                                    </div>
+                                    <span class="metric-subtext">AVERAGE ACTUAL EVENT DELAY</span>
+                                </div>
+                            </div>
+                            <div class="summary-metric-card">
+                                <div class="metric-accent-line"></div>
+                                <div class="metric-body">
+                                    <span class="metric-label">RETRAINING_POOL_STATUS</span>
+                                    <div class="metric-value-group">
+                                        <span class="metric-title-val text-low" id="stats-sync-status">Sync Ready</span>
+                                    </div>
+                                    <span class="metric-subtext">LIVE MODEL SYNCHRONIZATION</span>
+                                </div>
+                            </div>
+                        </div>
+        
+                        <!-- Retrain Controls -->
+                        <div class="retrain-container glass-card hidden" id="retrain-block" style="margin-bottom: 25px;">
+                            <div class="card-bracket bracket-tl"></div>
+                            <div class="card-bracket bracket-tr"></div>
+                            <div class="card-micro-grid"></div>
+                            <h3><span class="prefix">SYNC ::</span> Update Core Prediction Models</h3>
+                            <p style="font-size: 0.82rem; color: var(--text-secondary); margin-bottom: 15px;">Integrate all logged field outcomes back into the model datasets and run retraining.</p>
+                            <button class="glow-btn pulse-anim" id="retrain-btn" style="margin-bottom: 15px;">
+                                <i data-lucide="refresh-cw"></i> Retrain Models with Live Feedback
+                            </button>
+                            <div class="success-banner hidden" id="retrain-success" style="border: 1px solid rgba(92, 191, 134, 0.2); background: rgba(92, 191, 134, 0.03); border-radius: 4px; padding: 12px; margin-top: 10px;">
+                                <h4 id="retrain-success-header" style="color: #5cbf86; margin-bottom: 8px; display: flex; align-items: center; gap: 8px;"><i data-lucide="check-circle-2"></i> Retraining successful!</h4>
+                                <ul id="retrain-metrics" style="list-style: none; font-family: var(--font-mono); font-size: 0.72rem; color: var(--text-secondary); display: flex; flex-direction: column; gap: 4px; padding-left: 0;">
+                                    <!-- Retraining metrics list -->
+                                </ul>
+                            </div>
+                        </div>
+        
+                        <div class="grid-2-1">
+                            <!-- Form block -->
+                            <div class="glass-card" id="learning-form-container">
+                                <div class="card-bracket bracket-tl"></div>
+                                <div class="card-bracket bracket-tr"></div>
+                                <div class="card-micro-grid"></div>
+                                <h3 class="card-header"><span class="prefix">LOG ::</span> Log actual outcome</h3>
+                                <div id="learning-form-prompt" class="prompt-text">
+                                    Configure an incident in the <b>Predict</b> panel first, then log its resolution details here.
+                                </div>
+                                <form id="feedback-form" class="form-grid hidden">
+                                    <div class="event-details-bar" id="feedback-event-summary">
+                                        <!-- Populated by JS -->
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="actual_duration">Actual Duration (minutes)</label>
+                                        <input type="number" id="actual_duration" min="1" value="60" required>
+                                    </div>
+                                    <div class="form-group check-group">
+                                        <label class="checkbox-container">
+                                            <input type="checkbox" id="actual_road_closure">
+                                            <span class="checkmark"></span>
+                                            Road closure actually used?
+                                        </label>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="manpower_used">Personnel deployed</label>
+                                        <input type="number" id="manpower_used" min="0" value="5" required>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="notes">Field notes (optional)</label>
+                                        <textarea id="notes" placeholder="Enter incident details, diversion bottlenecks, or police notes..."></textarea>
+                                    </div>
+                                    <button type="submit" class="glow-btn success"><i data-lucide="check"></i> Log outcome & update buffer</button>
+                                </form>
+                            </div>
+        
+                            <!-- Logged items list -->
+                            <div class="glass-card">
+                                <div class="card-bracket bracket-tl"></div>
+                                <div class="card-bracket bracket-tr"></div>
+                                <div class="card-micro-grid"></div>
+                                <h3 class="card-header"><span class="prefix">BUFFER ::</span> Learning Buffer Logs</h3>
+                                <div class="feedback-stream-container" id="feedback-stream-container">
+                                    <!-- Dynamically filled -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+                
+                <!-- About Tab: System Documentation -->
+                <section class="tab-panel" id="panel-about">
+                    <div class="panel-scroll-container">
+                        <!-- Futuristic Interactive Pipeline Navigation -->
+                        <div class="docs-pipeline-nav">
+                            <div class="pipeline-track">
+                                <div class="pipeline-track-fill" id="docs-pipeline-fill"></div>
+                            </div>
+                            <div class="pipeline-step active" data-step="1">
+                                <div class="pipeline-node-halo"></div>
+                                <div class="pipeline-node">
+                                    <i data-lucide="database"></i>
+                                </div>
+                                <div class="pipeline-label">
+                                    <span class="num">01</span>
+                                    <span class="lbl">INPUT_DATA</span>
+                                </div>
+                            </div>
+                            <div class="pipeline-step" data-step="2">
+                                <div class="pipeline-node-halo"></div>
+                                <div class="pipeline-node">
+                                    <i data-lucide="clock"></i>
+                                </div>
+                                <div class="pipeline-label">
+                                    <span class="num">02</span>
+                                    <span class="lbl">DURATION_RF</span>
+                                </div>
+                            </div>
+                            <div class="pipeline-step" data-step="3">
+                                <div class="pipeline-node-halo"></div>
+                                <div class="pipeline-node">
+                                    <i data-lucide="shield-alert"></i>
+                                </div>
+                                <div class="pipeline-label">
+                                    <span class="num">03</span>
+                                    <span class="lbl">CLOSURE_RF</span>
+                                </div>
+                            </div>
+                            <div class="pipeline-step" data-step="4">
+                                <div class="pipeline-node-halo"></div>
+                                <div class="pipeline-node">
+                                    <i data-lucide="sliders"></i>
+                                </div>
+                                <div class="pipeline-label">
+                                    <span class="num">04</span>
+                                    <span class="lbl">SEVERITY_ENGINE</span>
+                                </div>
+                            </div>
+                            <div class="pipeline-step" data-step="5">
+                                <div class="pipeline-node-halo"></div>
+                                <div class="pipeline-node">
+                                    <i data-lucide="refresh-cw"></i>
+                                </div>
+                                <div class="pipeline-label">
+                                    <span class="num">05</span>
+                                    <span class="lbl">FEEDBACK_LOOP</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Documentation Content Panels -->
+                        <div class="docs-detail-container">
+                            
+                            <!-- Step 1: Input Data -->
+                            <div class="docs-detail-panel glass-card active" id="docs-panel-1">
+                                <div class="card-bracket bracket-tl"></div>
+                                <div class="card-bracket bracket-tr"></div>
+                                <div class="card-micro-grid"></div>
+                                <div class="docs-card-header">
+                                    <span class="docs-tech-badge">PIPELINE_01 :: RAW INPUTS</span>
+                                    <h3>Incident Feature Vectors</h3>
+                                </div>
+                                <hr class="divider">
+                                <div class="docs-card-body">
+                                    <p>Every incident logged in Sahaay is converted into a structured feature vector before ingestion by the Random Forest models. The features consist of:</p>
+                                    <div class="tactical-grid-visual">
+                                        <div class="grid-feature-node">
+                                            <span class="node-tag">EVENT TYPE</span>
+                                            <span class="node-val">Planned vs. Unplanned</span>
+                                        </div>
+                                        <div class="grid-feature-node">
+                                            <span class="node-tag">EVENT CAUSE</span>
+                                            <span class="node-val">13 Target Categories</span>
+                                        </div>
+                                        <div class="grid-feature-node">
+                                            <span class="node-tag">GEOGRAPHY</span>
+                                            <span class="node-val">Bangalore Centroid Nodes</span>
+                                        </div>
+                                        <div class="grid-feature-node">
+                                            <span class="node-tag">TEMPORAL</span>
+                                            <span class="node-val">Hour / Day / Month</span>
+                                        </div>
+                                    </div>
+                                    <p style="margin-top: 15px; font-size: 0.8rem; color: var(--text-secondary);">Temporal factors are converted into cyclical representations to capture peak vs. off-peak commute patterns. Corridor criticality mappings translate locations into topological impact parameters.</p>
+                                </div>
+                            </div>
+
+                            <!-- Step 2: Duration Model -->
+                            <div class="docs-detail-panel glass-card" id="docs-panel-2">
+                                <div class="card-bracket bracket-tl"></div>
+                                <div class="card-bracket bracket-tr"></div>
+                                <div class="card-micro-grid"></div>
+                                <div class="docs-card-header">
+                                    <span class="docs-tech-badge">PIPELINE_02 :: ENSEMBLE REGRESSOR</span>
+                                    <h3>Random Forest Regressor (Duration Model)</h3>
+                                </div>
+                                <hr class="divider">
+                                <div class="docs-card-body">
+                                    <p>Predicts event resolution duration. The target variable is log-transformed to stabilize variance and handle extreme outlier delays:</p>
+                                    <div class="latex-math-block">
+                                        \[\log(1 + \text{Duration}) = f_{\text{RF}}(X_{\text{features}})\]
+                                        \[\text{Duration}_{\text{pred}} = e^{f_{\text{RF}}(X)} - 1\]
+                                    </div>
+                                    <div class="docs-stats-grid">
+                                        <div class="docs-stat-item">
+                                            <span class="label">R² SCORE</span>
+                                            <span class="val">~0.34</span>
+                                        </div>
+                                        <div class="docs-stat-item">
+                                            <span class="label">ESTIMATORS</span>
+                                            <span class="val">150 Trees</span>
+                                        </div>
+                                        <div class="docs-stat-item">
+                                            <span class="label">MIN RESOLUTION</span>
+                                            <span class="val">5.0 min (floor)</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Step 3: Road Closure Model -->
+                            <div class="docs-detail-panel glass-card" id="docs-panel-3">
+                                <div class="card-bracket bracket-tl"></div>
+                                <div class="card-bracket bracket-tr"></div>
+                                <div class="card-micro-grid"></div>
+                                <div class="docs-card-header">
+                                    <span class="docs-tech-badge">PIPELINE_03 :: ENSEMBLE CLASSIFIER</span>
+                                    <h3>Random Forest Classifier (Road Closure Model)</h3>
+                                </div>
+                                <hr class="divider">
+                                <div class="docs-card-body">
+                                    <p>Computes the binary probability that an incident will require a physical road closure, which triggers active barricading recommendations:</p>
+                                    <div class="latex-math-block">
+                                        \[P(\text{Closure} = 1 \mid X) = \frac{1}{M} \sum_{m=1}^{M} T_m(X)\]
+                                    </div>
+                                    <div class="docs-stats-grid">
+                                        <div class="docs-stat-item">
+                                            <span class="label">ROC-AUC SCORE</span>
+                                            <span class="val">0.78</span>
+                                        </div>
+                                        <div class="docs-stat-item">
+                                            <span class="label">CRITERION</span>
+                                            <span class="val">Gini Impurity</span>
+                                        </div>
+                                        <div class="docs-stat-item">
+                                            <span class="label">FEATURES</span>
+                                            <span class="val">Type, Cause, Corridor</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Step 4: Severity score Sandbox -->
+                            <div class="docs-detail-panel glass-card" id="docs-panel-4">
+                                <div class="card-bracket bracket-tl"></div>
+                                <div class="card-bracket bracket-tr"></div>
+                                <div class="card-micro-grid"></div>
+                                <div class="docs-card-header">
+                                    <span class="docs-tech-badge">PIPELINE_04 :: COMPOSITE SCORING</span>
+                                    <h3>Severity Score Sandbox</h3>
+                                </div>
+                                <hr class="divider">
+                                <div class="docs-card-body">
+                                    <p style="margin-bottom: 20px; font-size: 0.82rem; color: var(--text-secondary);">Verify how operational weights adjust composite severity index outcomes in real-time.</p>
+                                    <div class="grid-2-1-playground">
+                                        
+                                        <!-- Left Side: Sliders -->
+                                        <div class="sandbox-weights-container">
+                                            <div class="sandbox-weight-row">
+                                                <div class="weight-info">
+                                                    <span class="weight-label">Duration Percentile (w_dur)</span>
+                                                    <span class="weight-val" id="docs-w-dur-val">40%</span>
+                                                </div>
+                                                <div class="slider-wrapper">
+                                                    <input type="range" class="hud-slider" id="docs-slider-w-dur" min="0" max="100" value="40">
+                                                </div>
+                                            </div>
+
+                                            <div class="sandbox-weight-row">
+                                                <div class="weight-info">
+                                                    <span class="weight-label">Road-Closure Prob (w_close)</span>
+                                                    <span class="weight-val" id="docs-w-close-val">25%</span>
+                                                </div>
+                                                <div class="slider-wrapper">
+                                                    <input type="range" class="hud-slider" id="docs-slider-w-close" min="0" max="100" value="25">
+                                                </div>
+                                            </div>
+
+                                            <div class="sandbox-weight-row">
+                                                <div class="weight-info">
+                                                    <span class="weight-label">Corridor Criticality (w_corr)</span>
+                                                    <span class="weight-val" id="docs-w-corr-val">20%</span>
+                                                </div>
+                                                <div class="slider-wrapper">
+                                                    <input type="range" class="hud-slider" id="docs-slider-w-corr" min="0" max="100" value="20">
+                                                </div>
+                                            </div>
+
+                                            <div class="sandbox-weight-row">
+                                                <div class="weight-info">
+                                                    <span class="weight-label">Peak-Hour Multiplier (w_peak)</span>
+                                                    <span class="weight-val" id="docs-w-peak-val">15%</span>
+                                                </div>
+                                                <div class="slider-wrapper">
+                                                    <input type="range" class="hud-slider" id="docs-slider-w-peak" min="0" max="100" value="15">
+                                                </div>
+                                            </div>
+
+                                            <div class="sandbox-total-bar" id="docs-sandbox-status">
+                                                <span class="status-indicator-light"></span>
+                                                <span class="status-message" id="docs-sandbox-status-text">TOTAL WEIGHT: 100% (BALANCED)</span>
+                                            </div>
+                                        </div>
+
+                                        <!-- Right Side: Scenarios & Results -->
+                                        <div class="sandbox-scenario-container">
+                                            <h3>Select Scenario Baseline</h3>
+                                            <div class="scenario-buttons">
+                                                <button class="docs-scenario-btn active" data-scenario="critical-crash">
+                                                    <i data-lucide="alert-octagon"></i> Peak Crash
+                                                </button>
+                                                <button class="docs-scenario-btn" data-scenario="midday-pothole">
+                                                    <i data-lucide="alert-triangle"></i> Midday Pothole
+                                                </button>
+                                                <button class="docs-scenario-btn" data-scenario="midnight-work">
+                                                    <i data-lucide="wrench"></i> Midnight Work
+                                                </button>
+                                            </div>
+
+                                            <div class="sandbox-results-panel">
+                                                <div class="gauge-block">
+                                                    <svg class="results-radial-gauge" viewBox="0 0 100 100">
+                                                        <circle cx="50" cy="50" r="42" class="gauge-bg-circle"></circle>
+                                                        <circle cx="50" cy="50" r="42" class="gauge-fill-circle" id="docs-gauge-path" stroke-dasharray="263.89" stroke-dashoffset="263.89"></circle>
+                                                    </svg>
+                                                    <div class="gauge-content">
+                                                        <span class="val-num" id="docs-score-num">84.2</span>
+                                                        <span class="val-band" id="docs-score-band">HIGH</span>
+                                                    </div>
+                                                </div>
+                                                <div class="results-readout">
+                                                    <div class="formula-readout">
+                                                        <code>S = <span id="docs-eq-w-dur">0.40</span>(P_d) + <span id="docs-eq-w-close">0.25</span>(P_c) + <span id="docs-eq-w-corr">0.20</span>(I_c) + <span id="docs-eq-w-peak">0.15</span>(M_t)</code>
+                                                    </div>
+                                                    <p id="docs-scenario-desc">
+                                                        Outer Ring Road accident. Estimated duration percentile is 90%, closure probability is 85%, corridor criticality is 95%, peak-hour time factor is 1.0 (Peak).
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Step 5: Closed-Loop Retraining -->
+                            <div class="docs-detail-panel glass-card" id="docs-panel-5">
+                                <div class="card-bracket bracket-tl"></div>
+                                <div class="card-bracket bracket-tr"></div>
+                                <div class="card-micro-grid"></div>
+                                <div class="docs-card-header">
+                                    <span class="docs-tech-badge">PIPELINE_05 :: FEEDBACK SYNAPSE</span>
+                                    <h3>Closed-Loop Retraining & Bounds</h3>
+                                </div>
+                                <hr class="divider">
+                                <div class="docs-card-body">
+                                    <p>Field outcomes logged inside the <b>Learning</b> tab trigger model retraining. Scikit-learn pipelines are refitted with new observations and reloaded in under 2 seconds.</p>
+                                    <div class="docs-warning-alert" style="margin-top: 15px;">
+                                        <i data-lucide="alert-triangle"></i>
+                                        <div class="alert-content">
+                                            <strong>Honest Limitations:</strong> High variance reflects noisy, real-world field operations. We recommend relying on directional <strong>Severity Bands</strong> rather than exact minute predictions.
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+                </section>
+                
+            </div>
+        </main>
+    </div>
+    
+    <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="/static/app.js?v=2.0"></script>
+</body>
+</html>

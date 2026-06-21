@@ -1,0 +1,5 @@
+event_type,event_cause,corridor,requires_road_closure,hour,dayofweek,month,actual_duration_min,actual_road_closure,manpower_used,notes,logged_at,is_weekend
+unplanned,vehicle_breakdown,Airport New South Road,0,11,5,6,80.0,0,5,,2026-06-20T11:57:17.863973,
+planned,vip_movement,West of Chord Road,1,12,5,6,120.0,1,6,,2026-06-20T12:08:40.679201,
+planned,construction,Bellary Road 2,0,22,5,6,60.0,0,5,,2026-06-20T22:31:06.176956,1.0
+planned,protest,Old Airport Road,0,13,6,6,60.0,0,5,,2026-06-21T13:28:52.462823,1.0

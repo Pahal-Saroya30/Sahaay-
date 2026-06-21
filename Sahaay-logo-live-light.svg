@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 430 160" width="430" height="160" font-family="&#39;Space Grotesk&#39;, sans-serif">
+  <defs>
+    
+  </defs>
+  
+  <g transform="translate(34,28) scale(1.625)">
+    
+    <circle cx="32" cy="32" r="10" fill="#724B39">
+      
+      
+    </circle>
+    
+    <circle cx="32" cy="32" r="27" fill="none" stroke="#D3C9C1" stroke-width="2"></circle>
+    <circle cx="32" cy="32" r="18" fill="none" stroke="#D3C9C1" stroke-width="2"></circle>
+    <circle cx="32" cy="32" r="9" fill="none" stroke="#D3C9C1" stroke-width="2"></circle>
+    
+    <g>
+      <path d="M32 32 L32 5 A27 27 0 0 1 55 24 Z" fill="#724B39" opacity="0.16"></path>
+      <path d="M32 32 L32 5" stroke="#724B39" stroke-width="3" stroke-linecap="round"></path>
+      
+    </g>
+    
+    <circle cx="44" cy="20" r="2.6" fill="#724B39"></circle>
+    <circle cx="32" cy="32" r="5" fill="#724B39"></circle>
+  </g>
+  
+  <text class="wm" x="150" y="82" font-size="54" font-weight="600" letter-spacing="-0.8" fill="#162127">Sahaay</text>
+  <text class="wm" x="152" y="108" font-size="13" font-weight="500" letter-spacing="3.4" fill="#CF9D7B">LIVE CITY TRAFFIC</text>
+</svg>
