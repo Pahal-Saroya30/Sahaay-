@@ -183,6 +183,21 @@ def api_retrain():
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+@app.post("/api/debug-log")
+async def api_debug_log(request: Request):
+    from fastapi import Request
+    try:
+        body = await request.json()
+        print(f"--- BROWSER DEBUG LOG ---")
+        print(body)
+        print(f"-------------------------")
+    except Exception as e:
+        body = await request.body()
+        print(f"--- BROWSER RAW DEBUG LOG ---")
+        print(body)
+        print(f"-----------------------------")
+    return {"status": "ok"}
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run("app:app", host="127.0.0.1", port=8000, reload=True)

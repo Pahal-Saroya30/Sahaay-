@@ -3,3 +3,6 @@ unplanned,vehicle_breakdown,Airport New South Road,0,11,5,6,80.0,0,5,,2026-06-20
 planned,vip_movement,West of Chord Road,1,12,5,6,120.0,1,6,,2026-06-20T12:08:40.679201,
 planned,construction,Bellary Road 2,0,22,5,6,60.0,0,5,,2026-06-20T22:31:06.176956,1.0
 planned,protest,Old Airport Road,0,13,6,6,60.0,0,5,,2026-06-21T13:28:52.462823,1.0
+unplanned,accident,Mysore Road,0,9,1,6,39.0,1,8,Accident resolved in 39 mins using 8 officers. Traffic restored.,2026-06-23T22:06:53.102786,0.0
+planned,procession,Airport New South Road,1,12,1,6,35.0,1,7,,2026-06-23T22:19:33.048593,0.0
+unplanned,congestion,ORR North 1,1,8,1,6,76.0,0,6,,2026-06-23T22:45:29.314587,0.0

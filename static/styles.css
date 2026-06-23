@@ -2533,6 +2533,12 @@ body::before {
     width: 100%;
     height: 100%;
 }
+.mobile-map-toggle-btn {
+    display: none;
+}
+.mobile-map-hud-trigger-btn {
+    display: none;
+}
 .map-overlay-radar {
     position: absolute;
     top: 0;
@@ -3844,5 +3850,318 @@ body::before {
     line-height: 1.45;
     color: var(--text-secondary);
     margin: 0;
+}
+
+/* ==========================================================================
+   MOBILE & TABLET RESPONSIVENESS OVERHAYS
+   ========================================================================== */
+
+@media (max-width: 900px) {
+    html {
+        height: 100% !important;
+        overflow: hidden !important;
+    }
+
+    body {
+        height: 100% !important;
+        overflow: hidden !important;
+    }
+
+    .split-pane-layout {
+        flex-direction: column;
+        height: 100vh;
+        width: 100% !important;
+        max-width: 100% !important;
+        overflow: hidden !important;
+    }
+
+    .control-hud, .telemetry-canvas {
+        min-width: 0 !important;
+        max-width: 100% !important;
+        width: 100% !important;
+    }
+
+    /* --- TAB STATE: PREDICT --- */
+    /* Map at the top (40vh), scrollable controls at the bottom (60vh) */
+    body[data-active-tab="predict"] .telemetry-canvas {
+        order: -1;
+        width: 100%;
+        height: 40vh;
+        min-height: 250px;
+        flex-shrink: 0;
+        border-top: none;
+        border-bottom: 1px solid var(--border-color);
+        overflow: hidden;
+    }
+
+    body[data-active-tab="predict"] .control-hud {
+        flex: 1;
+        width: 100%;
+        height: auto;
+        overflow-y: auto !important;
+        overflow-x: hidden;
+        border-right: none;
+        padding: 16px;
+        display: flex;
+        flex-direction: column;
+    }
+
+    /* Sticky navigation tab menu inside the controls scroll container */
+    body[data-active-tab="predict"] .nav-tabs-hud {
+        position: sticky;
+        top: 0;
+        z-index: 100;
+        background: var(--bg-card) !important;
+        margin-bottom: 16px !important;
+        padding: 4px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+
+    /* --- TAB STATE: OTHER (Hotspots, Learning, Docs) --- */
+    /* Hide input forms and prediction results to maximize workspace */
+    body:not([data-active-tab="predict"]) #hud-inputs-section,
+    body:not([data-active-tab="predict"]) #prediction-results,
+    body:not([data-active-tab="predict"]) .hud-divider,
+    body:not([data-active-tab="predict"]) .hud-footer {
+        display: none !important;
+    }
+
+    /* Compact header + navigation at the top */
+    body:not([data-active-tab="predict"]) .control-hud {
+        width: 100%;
+        height: auto;
+        flex-shrink: 0;
+        padding: 12px 16px 8px 16px;
+        border-right: none;
+        border-bottom: 1px solid var(--border-color);
+        overflow: visible !important;
+    }
+
+    body:not([data-active-tab="predict"]) .nav-tabs-hud {
+        margin-bottom: 0 !important;
+    }
+
+    /* Active panel scrolls and takes up remaining screen height */
+    body:not([data-active-tab="predict"]) .telemetry-canvas {
+        flex: 1;
+        width: 100%;
+        height: auto;
+        overflow: hidden;
+        border-top: none;
+    }
+
+    .panel-scroll-container {
+        padding: 16px;
+        height: 100%;
+        overflow-y: auto;
+    }
+
+    /* Responsive adjustments for tab menu text on small devices */
+    .hud-tab-btn {
+        font-size: 0.62rem !important;
+        gap: 4px !important;
+        padding: 8px 2px !important;
+    }
+    .hud-tab-btn i {
+        width: 12px !important;
+        height: 12px !important;
+    }
+
+    /* Prevent Segmented Control label clipping */
+    .segment-btn {
+        font-size: 0.58rem !important;
+        padding: 8px 4px !important;
+        letter-spacing: 0.02em !important;
+    }
+
+    /* Prevent Location Control Deck label overflow */
+    .location-control-deck .deck-header {
+        flex-direction: row;
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+    .location-control-deck .deck-header label {
+        font-size: 0.68rem !important;
+    }
+    .vp-toggle-btn {
+        font-size: 0.65rem !important;
+        padding: 4px 8px !important;
+    }
+
+    /* Horizontal scroll wrappers to prevent analytical charts clipping */
+    .timeline-chart-container {
+        overflow-x: auto !important;
+        scrollbar-width: thin;
+    }
+    .timeline-grid, .timeline-rows {
+        min-width: 550px;
+    }
+
+    .synapse-visual-card {
+        overflow-x: auto !important;
+        scrollbar-width: thin;
+    }
+    .learning-synapse-map {
+        width: 800px !important;
+        height: 100px !important;
+        flex-shrink: 0;
+    }
+
+    @media (max-width: 380px) {
+        .hud-tab-btn {
+            font-size: 0.55rem !important;
+            gap: 2px !important;
+            padding: 6px 1px !important;
+        }
+        .hud-tab-btn i {
+            display: none !important;
+        }
+
+        .segmented-control {
+            flex-direction: column;
+            gap: 4px;
+            background: transparent !important;
+            border: none !important;
+            padding: 0 !important;
+        }
+        .segment-btn {
+            background: rgba(255, 255, 255, 0.02) !important;
+            border: 1px solid var(--border-color) !important;
+            border-radius: 4px !important;
+            width: 100% !important;
+            padding: 8px !important;
+            font-size: 0.62rem !important;
+        }
+        .segment-btn.active {
+            background: var(--bg-card) !important;
+            border-color: var(--border-color-hover) !important;
+        }
+        [data-theme="light"] .segment-btn {
+            background: #ffffff !important;
+        }
+    }
+
+    /* Floating Map Toggle Button styling for mobile */
+    .mobile-map-toggle-btn {
+        display: flex !important;
+        align-items: center;
+        gap: 6px;
+        position: absolute;
+        bottom: 24px;
+        right: 16px;
+        z-index: 1000;
+        background: var(--bg-card);
+        border: 1px solid var(--border-color-hover);
+        border-radius: 4px;
+        color: var(--accent-color);
+        font-family: var(--font-mono);
+        font-size: 0.65rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        padding: 6px 12px;
+        cursor: pointer;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+        transition: all 0.2s ease;
+    }
+    .mobile-map-toggle-btn:active {
+        transform: scale(0.95);
+    }
+    .mobile-map-toggle-btn i {
+        width: 12px;
+        height: 12px;
+        color: var(--accent-color);
+    }
+
+    /* HUD View GIS Map Trigger button style */
+    .mobile-map-hud-trigger-btn {
+        display: flex !important;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        width: 100%;
+        background: rgba(207, 157, 123, 0.05);
+        border: 1px solid var(--border-color-hover);
+        border-radius: 4px;
+        color: var(--accent-color);
+        font-family: var(--font-mono);
+        font-size: 0.72rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        padding: 10px;
+        margin-top: 12px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+    .mobile-map-hud-trigger-btn:hover {
+        background: rgba(207, 157, 123, 0.1);
+        box-shadow: 0 0 12px rgba(207, 157, 123, 0.1);
+    }
+    .mobile-map-hud-trigger-btn i {
+        width: 14px;
+        height: 14px;
+        color: var(--accent-color);
+    }
+
+    /* By default on Predict tab on mobile, hide map and show controls full height */
+    body[data-active-tab="predict"]:not(.mobile-map-active) .telemetry-canvas {
+        display: none !important;
+    }
+
+    body[data-active-tab="predict"]:not(.mobile-map-active) .control-hud {
+        flex: 1;
+        width: 100% !important;
+        height: 100vh !important;
+        overflow-y: auto !important;
+    }
+
+    /* When mobile-map-active is toggled on, show map full screen and hide controls */
+    body[data-active-tab="predict"].mobile-map-active .telemetry-canvas {
+        display: block !important;
+        height: 100vh !important;
+        max-height: 100vh !important;
+        width: 100% !important;
+        flex: 1 !important;
+        border-bottom: none !important;
+    }
+
+    body[data-active-tab="predict"].mobile-map-active .control-hud {
+        display: none !important;
+    }
+}
+
+@media (max-width: 550px) {
+    .hud-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+    }
+    
+    .header-right-group {
+        width: 100%;
+        justify-content: space-between;
+    }
+    
+    .hud-footer {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+        padding: 10px;
+    }
+    
+    .footer-right-telemetry {
+        width: 100%;
+        justify-content: space-between;
+    }
+}
+
+@media (max-width: 480px) {
+    .metrics-grid {
+        grid-template-columns: 1fr;
+        gap: 16px;
+    }
+    
+    .severity-ring-container {
+        margin: 10px auto;
+    }
 }
 

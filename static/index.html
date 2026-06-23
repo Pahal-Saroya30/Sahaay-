@@ -11,7 +11,7 @@
     <!-- Leaflet.js CDN CSS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
     <!-- Vanilla CSS stylesheet -->
-    <link rel="stylesheet" href="/static/styles.css?v=2.1">
+    <link rel="stylesheet" href="/static/styles.css?v=2.9">
     <!-- Browser tab logo icon -->
     <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
     <!-- Leaflet.js CDN Script -->
@@ -48,6 +48,9 @@
                         <i data-lucide="clock" class="time-icon"></i>
                         <span id="live-time">Bengaluru, IN</span>
                     </div>
+                    <button type="button" class="theme-toggle-btn" id="theme-toggle" title="Toggle Light/Dark Theme">
+                        <i data-lucide="sun"></i>
+                    </button>
                 </div>
             </header>
 
@@ -120,11 +123,16 @@
                                 </button>
                             </div>
                             
-                            <div class="form-group" style="margin-bottom: 0;">
-                                <select id="corridor" required>
-                                    <!-- Populated dynamically -->
+                            <div class="form-group" style="margin-bottom:0;">
+                                <select id="corridor" class="hud-select" required>
+                                    <!-- Populated dynamically by JS -->
                                 </select>
                             </div>
+                            <!-- Floating map expand/collapse button for mobile in HUD -->
+                            <button type="button" class="mobile-map-hud-trigger-btn" id="mobile-map-hud-trigger-btn">
+                                <i data-lucide="map"></i>
+                                <span>View GIS Map</span>
+                            </button>
                             
                             <!-- Tactical Coord Grid (VectorPad) -->
                             <div class="vector-pad-outer-collapse" id="vector-pad-outer-collapse">
@@ -342,6 +350,11 @@
                         <div id="leaflet-map" class="map-viewport"></div>
                         <div class="map-overlay-radar"></div>
                         <div class="map-overlay-grid"></div>
+                        <!-- Floating map expand/collapse button for mobile -->
+                        <button type="button" class="mobile-map-toggle-btn" id="mobile-map-toggle-btn">
+                            <i data-lucide="arrow-left"></i>
+                            <span id="mobile-map-toggle-label">Back to Form</span>
+                        </button>
                     </div>
                 </section>
                 
@@ -904,6 +917,6 @@
     </div>
     
     <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
-    <script src="/static/app.js?v=2.0"></script>
+    <script src="/static/app.js?v=2.9"></script>
 </body>
 </html>

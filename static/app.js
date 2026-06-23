@@ -1,5 +1,31 @@
 // Sahaay Web Application Logic -- Command Deck Overhaul
 
+window.onerror = function (message, source, lineno, colno, error) {
+    fetch("/api/debug-log", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+            type: "error",
+            message: message,
+            source: source,
+            lineno: lineno,
+            colno: colno,
+            error: error ? error.stack : ""
+        })
+    }).catch(() => {});
+};
+
+window.onunhandledrejection = function (event) {
+    fetch("/api/debug-log", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+            type: "unhandledrejection",
+            reason: event.reason ? (event.reason.message || event.reason.toString()) : "unknown"
+        })
+    }).catch(() => {});
+};
+
 let centroids = {};
 let lastInputState = null;
 let basePredictedDuration = 60; // baseline for simulator
@@ -539,8 +565,10 @@ async function runLiveForecast() {
     
     logConsole(`Executing real-time ML prediction pipeline for corridor: ${reqBody.corridor}...`, "predict");
     const sysStatus = document.getElementById("sys-status-badge");
-    sysStatus.textContent = "[PROCESSING]";
-    sysStatus.className = "header-tag text-medium";
+    if (sysStatus) {
+        sysStatus.textContent = "[PROCESSING]";
+        sysStatus.className = "header-tag text-medium";
+    }
     
     try {
         const res = await fetch("/api/predict", {
@@ -620,13 +648,17 @@ async function runLiveForecast() {
         // Enable outcome feedback
         enableLearningForm(r.inputs);
         
-        sysStatus.textContent = "[SUCCESS]";
-        sysStatus.className = "header-tag text-low";
+        if (sysStatus) {
+            sysStatus.textContent = "[SUCCESS]";
+            sysStatus.className = "header-tag text-low";
+        }
         
     } catch (err) {
         logConsole(`Pipeline warning: ${err.message}`, "error");
-        sysStatus.textContent = "[FAIL]";
-        sysStatus.className = "header-tag text-high";
+        if (sysStatus) {
+            sysStatus.textContent = "[FAIL]";
+            sysStatus.className = "header-tag text-high";
+        }
     }
 }
 
@@ -768,6 +800,7 @@ document.addEventListener("DOMContentLoaded", () => {
     
     // Initialize interactive severity sandbox calculator on docs panel
     initDocsCalculator();
+    setupMobileMapToggle();
 });
 
 // Navigation slider logic
@@ -775,10 +808,16 @@ function setupNavigation() {
     const tabs = document.querySelectorAll(".hud-tab-btn");
     const slider = document.getElementById("tabs-slider");
     
+    // Set initial tab state
+    document.body.setAttribute("data-active-tab", "predict");
+    
     tabs.forEach((tab, index) => {
         tab.addEventListener("click", () => {
             tabs.forEach(t => t.classList.remove("active"));
             tab.classList.add("active");
+            
+            // Set active tab attribute on body for responsive CSS styling
+            document.body.setAttribute("data-active-tab", tab.dataset.tab);
             
             if (slider) {
                 slider.style.transform = `translateX(-${index * 25}%)`;
@@ -798,6 +837,16 @@ function setupNavigation() {
                 setTimeout(() => map.invalidateSize(), 250);
             } else if (tab.dataset.tab === "about") {
                 setTimeout(animateDocsCards, 250);
+            }
+
+            // Mobile scroll support
+            if (window.innerWidth <= 900) {
+                const canvas = document.querySelector(".telemetry-canvas");
+                if (canvas) {
+                    setTimeout(() => {
+                        canvas.scrollIntoView({ behavior: "smooth", block: "start" });
+                    }, 150);
+                }
             }
         });
     });
@@ -1164,6 +1213,16 @@ function selectAndPredictCorridor(corridorName, causeName = null) {
     const predictTabBtn = document.querySelector('.hud-tab-btn[data-tab="predict"]');
     if (predictTabBtn) {
         predictTabBtn.click();
+        
+        // Auto-show map on mobile when a hotspot is clicked
+        if (window.innerWidth <= 900) {
+            document.body.classList.add("mobile-map-active");
+            if (map) {
+                setTimeout(() => {
+                    map.invalidateSize();
+                }, 150);
+            }
+        }
     }
     
     // Trigger live forecast
@@ -1538,10 +1597,15 @@ function setupThemeSwitcher() {
             document.body.setAttribute("data-theme", "light");
             if (logoImg) logoImg.src = "/static/favicon.svg";
             localStorage.setItem("theme", "light");
+            if (toggleBtn) toggleBtn.innerHTML = '<i data-lucide="moon"></i>';
         } else {
             document.body.removeAttribute("data-theme");
             if (logoImg) logoImg.src = "/static/favicon.svg";
             localStorage.setItem("theme", "dark");
+            if (toggleBtn) toggleBtn.innerHTML = '<i data-lucide="sun"></i>';
+        }
+        if (window.lucide) {
+            window.lucide.createIcons();
         }
         
         // Update Leaflet tile layers
@@ -1737,4 +1801,36 @@ function initDocsCalculator() {
     });
     
     recalculate();
+}
+
+// Floating full map toggle for mobile viewports
+function setupMobileMapToggle() {
+    const mapToggleBtn = document.getElementById("mobile-map-toggle-btn");
+    const hudTriggerBtn = document.getElementById("mobile-map-hud-trigger-btn");
+
+    if (hudTriggerBtn) {
+        hudTriggerBtn.addEventListener("click", () => {
+            document.body.classList.add("mobile-map-active");
+
+            // Force Leaflet map resize calculation after class change
+            if (map) {
+                setTimeout(() => {
+                    map.invalidateSize();
+                }, 150);
+            }
+        });
+    }
+
+    if (mapToggleBtn) {
+        mapToggleBtn.addEventListener("click", () => {
+            document.body.classList.remove("mobile-map-active");
+            
+            // Force Leaflet map resize calculation after class change
+            if (map) {
+                setTimeout(() => {
+                    map.invalidateSize();
+                }, 150);
+            }
+        });
+    }
 }
